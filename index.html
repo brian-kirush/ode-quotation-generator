@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interiors by Ode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @media print {
+            @page { margin: 0; size: auto; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; margin: 0; padding: 0; }
+            
+            /* Reset layout for print to prevent cutoff */
+            main { display: block !important; width: 100% !important; margin: 0 !important; padding: 0 !important; max-width: none !important; }
+            #view-editor { display: block !important; }
+            
+            #preview-container {
+                width: 100% !important;
+                max-width: 210mm !important;
+                margin: 0 auto !important;
+                box-shadow: none !important;
+                border: none !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            /* Hide scrollbars in print */
+            ::-webkit-scrollbar { display: none; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-10 no-print">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-2">
+                <img id="header-logo" src="image/interiors_by_ode_logo-removebg-preview.png" class="h-8 w-auto mr-2 rounded bg-white" onerror="this.style.display='none'">
+                <i class="fa-solid fa-file-invoice text-blue-400 text-xl"></i>
+                <h1 class="text-xl font-bold tracking-wide">Interiors by Ode</h1>
+            </div>
+            <div class="flex flex-wrap justify-center items-center gap-3 w-full md:w-auto">
+                <nav class="flex bg-gray-800 rounded-lg p-1">
+                    <button onclick="switchView('editor')" id="nav-editor" class="px-3 py-1 rounded text-sm font-medium bg-gray-600 text-white transition-colors">Editor</button>
+                    <button onclick="switchView('history')" id="nav-history" class="px-3 py-1 rounded text-sm font-medium text-gray-400 hover:text-white transition-colors">History</button>
+                    <button onclick="switchView('analytics')" id="nav-analytics" class="px-3 py-1 rounded text-sm font-medium text-gray-400 hover:text-white transition-colors">Analytics</button>
+                </nav>
+                <div class="flex gap-2 flex-wrap justify-center">
+                    <button onclick="toggleCalculator()" class="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-colors font-medium text-sm">
+                        <i class="fa-solid fa-calculator"></i> Calc
+                    </button>
+                    <button onclick="resetData()" class="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-colors font-medium text-sm">
+                        <i class="fa-solid fa-rotate-left"></i> Reset
+                    </button>
+                    <button onclick="window.print()" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg transition-colors font-medium text-sm">
+                        <i class="fa-solid fa-download"></i> PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4 md:p-8">
+        
+        <!-- VIEW: EDITOR -->
+        <div id="view-editor" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="space-y-6 no-print">
+            <!-- Invoice Manager -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex gap-2 items-center justify-between">
+                <div class="flex-grow">
+                    <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Select Invoice</label>
+                    <select id="invoice-selector" onchange="switchInvoice(this.value)" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium">
+                        <!-- Options injected by JS -->
+                    </select>
+                </div>
+                <div class="flex gap-2 mt-5">
+                    <button onclick="createInvoice()" class="bg-blue-100 text-blue-600 hover:bg-blue-200 p-2 rounded" title="New Invoice"><i class="fa-solid fa-plus"></i></button>
+                    <button onclick="deleteInvoice()" class="bg-red-100 text-red-600 hover:bg-red-200 p-2 rounded" title="Delete Invoice"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </div>
+
+            <!-- Document Details -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-calculator text-blue-600"></i> Document Details
+                </h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Doc Title</label>
+                        <input type="text" id="input-title" oninput="updateField('title', this.value)" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Number</label>
+                        <input type="text" id="input-number" oninput="updateField('number', this.value)" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Date</label>
+                        <input type="date" id="input-date" oninput="updateField('date', this.value)" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Tax Rate (%)</label>
+                        <input type="number" id="input-taxRate" oninput="updateField('taxRate', this.value)" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Payment Terms</label>
+                        <select id="input-paymentTerms" onchange="updateField('paymentTerms', this.value)" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="0">Due on Receipt</option>
+                            <option value="15">Net 15</option>
+                            <option value="30">Net 30</option>
+                            <option value="60">Net 60</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Due Date</label>
+                        <input type="date" id="input-dueDate" readonly class="w-full p-2 border rounded bg-gray-50 text-gray-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Status</label>
+                        <div class="flex items-center gap-2 h-10">
+                            <input type="checkbox" id="input-isPaid" onchange="updateField('isPaid', this.checked)" class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300">
+                            <span class="text-sm font-medium text-gray-700">Mark as Paid</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Theme Color</label>
+                        <input type="color" id="input-themeColor" oninput="updateField('themeColor', this.value)" class="w-full h-10 p-1 border rounded cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Background Color</label>
+                        <input type="color" id="input-backgroundColor" oninput="updateField('backgroundColor', this.value)" class="w-full h-10 p-1 border rounded cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Text Color</label>
+                        <input type="color" id="input-textColor" oninput="updateField('textColor', this.value)" class="w-full h-10 p-1 border rounded cursor-pointer">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Logo Image</label>
+                        <input type="file" accept="image/*" onchange="handleLogoUpload(this)" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Parties -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-lg font-semibold mb-4">Parties</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-3">
+                        <h3 class="text-sm font-bold text-gray-400 uppercase">From (Sender)</h3>
+                        <input id="input-sender-name" placeholder="Company Name" oninput="updateNested('sender', 'name', this.value)" class="w-full p-2 border rounded">
+                        <input id="input-sender-email" placeholder="Email" oninput="updateNested('sender', 'email', this.value)" class="w-full p-2 border rounded">
+                        <textarea id="input-sender-address" placeholder="Address" oninput="updateNested('sender', 'address', this.value)" class="w-full p-2 border rounded h-20 resize-none"></textarea>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-sm font-bold text-gray-400 uppercase">To (Client)</h3>
+                            <button onclick="saveClient()" class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200" title="Save to Database"><i class="fa-solid fa-save"></i> Save</button>
+                        </div>
+                        <select id="client-selector" onchange="loadClient(this.value)" class="w-full p-2 border rounded text-sm bg-gray-50 mb-1">
+                            <option value="">Select Saved Client...</option>
+                        </select>
+                        <input id="input-recipient-name" placeholder="Client Name" oninput="updateNested('recipient', 'name', this.value)" class="w-full p-2 border rounded">
+                        <input id="input-recipient-email" placeholder="Email" oninput="updateNested('recipient', 'email', this.value)" class="w-full p-2 border rounded">
+                        <textarea id="input-recipient-address" placeholder="Address" oninput="updateNested('recipient', 'address', this.value)" class="w-full p-2 border rounded h-20 resize-none"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-lg font-semibold mb-4">Notes & Terms</h2>
+                <textarea id="input-notes" oninput="updateField('notes', this.value)" class="w-full p-2 border rounded h-24 resize-none" placeholder="Add payment instructions, bank details, or thank you notes..."></textarea>
+            </div>
+
+            <!-- Signature -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-lg font-semibold mb-4">Signature</h2>
+                <div class="border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+                    <canvas id="signature-pad" width="500" height="150" class="w-full h-32 touch-none cursor-crosshair"></canvas>
+                </div>
+                <div class="flex justify-end mt-2">
+                    <button onclick="clearSignature()" class="text-xs text-red-600 hover:text-red-800 font-medium flex items-center gap-1">
+                        <i class="fa-solid fa-eraser"></i> Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- Line Items -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold">Line Items</h2>
+                    <button onclick="addItem()" class="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm font-medium">
+                        <i class="fa-solid fa-plus"></i> Add Item
+                    </button>
+                </div>
+                <div id="items-container" class="space-y-3">
+                    <!-- Items injected here by JS -->
+                </div>
+            </div>
+            </div>
+
+            <!-- PREVIEW (Right Column) -->
+            <div class="lg:sticky lg:top-24 h-fit">
+            <div class="flex justify-between items-center mb-2 no-print">
+                <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider">Live Preview</h2>
+                <div class="text-xs text-gray-400 flex items-center gap-1">
+                    <i class="fa-solid fa-print"></i> A4 Format
+                </div>
+            </div>
+            
+            <div class="overflow-auto bg-gray-200 p-4 rounded-xl border border-gray-300 no-print-bg">
+                <div id="preview-container" class="bg-white mx-auto shadow-lg p-8 md:p-12 relative" style="width: 210mm; min-height: 297mm;">
+                    
+                    <!-- Paid Stamp -->
+                    <div id="preview-paid-stamp" class="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 border-[6px] border-red-600 text-red-600 font-black text-8xl px-8 py-2 rounded opacity-40 -rotate-12 pointer-events-none hidden z-20 tracking-widest uppercase">
+                        PAID
+                    </div>
+
+                    <!-- Logo -->
+                    <div class="mb-6 flex items-center gap-4">
+                        <img id="preview-logo" src="images/logo.png" class="h-24 w-auto object-contain" onerror="this.style.display='none'">
+                        <h1 id="preview-company-header" class="text-3xl font-bold uppercase tracking-wide hidden"></h1>
+                    </div>
+
+                    <!-- Header -->
+                    <div class="flex justify-between items-start mb-12">
+                        <div>
+                            <h1 id="preview-title" class="text-4xl font-bold text-slate-800 mb-2 uppercase">INVOICE</h1>
+                            <p class="text-gray-500">#<span id="preview-number"></span></p>
+                        </div>
+                        <div class="text-right">
+                            <h3 id="preview-sender-name" class="font-bold text-xl text-slate-800"></h3>
+                            <p id="preview-sender-address" class="text-gray-500 text-sm whitespace-pre-line"></p>
+                            <p id="preview-sender-email" class="text-gray-500 text-sm"></p>
+                        </div>
+                    </div>
+
+                    <!-- Bill To -->
+                    <div class="flex justify-between mb-12">
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase mb-1">Bill To</p>
+                            <h3 id="preview-recipient-name" class="font-bold text-slate-800"></h3>
+                            <p id="preview-recipient-address" class="text-gray-500 text-sm whitespace-pre-line"></p>
+                            <p id="preview-recipient-email" class="text-gray-500 text-sm"></p>
+                        </div>
+                        <div class="text-right">
+                            <div class="mb-2">
+                                <p class="text-xs font-bold text-gray-400 uppercase">Date</p>
+                                <p id="preview-date" class="font-medium"></p>
+                            </div>
+                            <div class="mb-2">
+                                <p class="text-xs font-bold text-gray-400 uppercase">Due Date</p>
+                                <p id="preview-dueDate" class="font-medium"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <table class="w-full mb-8">
+                        <thead>
+                            <tr class="border-b-2 border-slate-800">
+                                <th class="text-left py-3 font-bold text-slate-800 uppercase text-sm">Description</th>
+                                <th class="text-center py-3 font-bold text-slate-800 uppercase text-sm">Qty</th>
+                                <th class="text-right py-3 font-bold text-slate-800 uppercase text-sm">Price</th>
+                                <th class="text-right py-3 font-bold text-slate-800 uppercase text-sm">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="preview-items">
+                            <!-- Preview items injected here -->
+                        </tbody>
+                    </table>
+
+                    <!-- Totals -->
+                    <div class="flex justify-end">
+                        <div class="w-1/2 space-y-3">
+                            <div class="flex justify-between text-gray-600">
+                                <span>Subtotal</span>
+                                <span>KSH <span id="preview-subtotal">0.00</span></span>
+                            </div>
+                            <div class="flex justify-between text-gray-600">
+                                <span>Tax (<span id="preview-taxRate"></span>%)</span>
+                                <span>KSH <span id="preview-taxAmount">0.00</span></span>
+                            </div>
+                            <div id="preview-total-line" class="flex justify-between text-xl font-bold text-slate-800 border-t-2 border-slate-800 pt-3">
+                                <span>Total</span>
+                                <span>KSH <span id="preview-total">0.00</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="mt-8 pt-4 border-t border-gray-200" id="preview-notes-section">
+                        <h4 id="preview-notes-title" class="font-bold text-sm mb-2 uppercase">Notes</h4>
+                        <p id="preview-notes" class="text-sm text-gray-600 whitespace-pre-line"></p>
+                    </div>
+
+                    <!-- Signature Preview -->
+                    <div class="mt-8 flex justify-end">
+                        <div class="text-center">
+                            <img id="preview-signature" class="h-16 w-auto object-contain mb-2 mx-auto" onerror="this.style.display='none'">
+                            <p class="text-xs text-gray-400 border-t border-gray-300 px-4 pt-1">Authorized Signature</p>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="mt-16 pt-8 border-t border-gray-200 text-center text-gray-500 text-sm">
+                        <p>Thank you for your business!</p>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <!-- VIEW: HISTORY -->
+        <div id="view-history" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <h2 class="text-2xl font-bold text-gray-800">Invoice History</h2>
+                    <div class="flex flex-col sm:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
+                        <div class="flex gap-2">
+                            <button onclick="document.getElementById('import-input').click()" class="w-full md:w-auto flex-1 md:flex-none flex items-center justify-center gap-2 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg transition-colors font-medium text-sm text-gray-700">
+                                <i class="fa-solid fa-upload"></i> Import
+                            </button>
+                            <button onclick="exportData()" class="w-full md:w-auto flex-1 md:flex-none flex items-center justify-center gap-2 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg transition-colors font-medium text-sm text-gray-700">
+                                <i class="fa-solid fa-download"></i> Export
+                            </button>
+                        </div>
+                        <div class="relative w-full md:w-64">
+                        <i class="fa-solid fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="history-search" oninput="renderHistory()" placeholder="Search client or number..." class="w-full pl-10 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold">
+                                <th class="p-4">Date</th>
+                                <th class="p-4">Number</th>
+                                <th class="p-4">Client</th>
+                                <th class="p-4 text-right">Amount</th>
+                                <th class="p-4 text-center">Status</th>
+                                <th class="p-4 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body" class="text-sm text-gray-700">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: ANALYTICS -->
+        <div id="view-analytics" class="hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <h3 class="text-gray-500 text-sm uppercase font-bold">Total Revenue</h3>
+                    <p class="text-3xl font-bold text-gray-800 mt-2" id="analytics-total">KSH 0.00</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 col-span-2">
+                    <h3 class="text-gray-500 text-sm uppercase font-bold mb-4">Business Health</h3>
+                    <p id="analytics-health" class="text-lg font-medium"></p>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 class="text-lg font-bold mb-4">Revenue Trend</h3>
+                <div class="h-80 w-full">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Calculator Widget -->
+    <input type="file" id="import-input" class="hidden" accept=".json,application/json" onchange="importData(this)">
+
+    <div id="calculator-widget" class="fixed bottom-4 right-4 bg-white p-4 rounded-xl shadow-2xl border border-gray-200 hidden z-50 w-64 max-w-[calc(100vw-2rem)] no-print">
+        <div class="flex justify-between items-center mb-2">
+            <h3 class="font-bold text-gray-700"><i class="fa-solid fa-calculator"></i> Calculator</h3>
+            <button onclick="toggleCalculator()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-times"></i></button>
+        </div>
+        <input type="text" id="calc-display" readonly class="w-full bg-gray-100 p-2 rounded mb-2 text-right font-mono text-lg" value="0">
+        <div class="grid grid-cols-4 gap-2">
+            <button onclick="calcInput('7')" class="bg-gray-200 p-2 rounded hover:bg-gray-300">7</button>
+            <button onclick="calcInput('8')" class="bg-gray-200 p-2 rounded hover:bg-gray-300">8</button>
+            <button onclick="calcInput('9')" class="bg-gray-200 p-2 rounded hover:bg-gray-300">9</button>
+            <button onclick="calcInput('/')" class="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-200">/</button>
+            
+            <button onclick="calcInput('4')" class="bg-gray-200 p-2 rounded hover:bg-gray-300">4</button>
+            <button onclick="calcInput('5')" class="bg-gray-200 p-2 rounded hover:bg-gray-300">5</button>
+            <button onclick="calcInput('6')" class="bg-gray-200 p-2 rounded hover:bg-gray-300">6</button>
+            <button onclick="calcInput('*')" class="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-200">*</button>
+            
+            <button onclick="calcInput('1')" class="bg-gray-200 p-2 rounded hover:bg-gray-300">1</button>
+            <button onclick="calcInput('2')" class="bg-gray-200 p-2 rounded hover:bg-gray-300">2</button>
+            <button onclick="calcInput('3')" class="bg-gray-200 p-2 rounded hover:bg-gray-300">3</button>
+            <button onclick="calcInput('-')" class="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-200">-</button>
+            
+            <button onclick="calcInput('C')" class="bg-red-100 text-red-600 p-2 rounded hover:bg-red-200">C</button>
+            <button onclick="calcInput('0')" class="bg-gray-200 p-2 rounded hover:bg-gray-300">0</button>
+            <button onclick="calcResult()" class="bg-blue-600 text-white p-2 rounded hover:bg-blue-700">=</button>
+            <button onclick="calcInput('+')" class="bg-blue-100 text-blue-600 p-2 rounded hover:bg-blue-200">+</button>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        const defaultState = {
+            title: 'INVOICE',
+            number: 'INV-001',
+            date: new Date().toISOString().split('T')[0],
+            paymentTerms: '0',
+            isPaid: false,
+            dueDate: new Date().toISOString().split('T')[0],
+            logo: 'images/logo.png',
+            signature: '',
+            taxRate: 10,
+            themeColor: '#ffffff',
+            backgroundColor: '#738a73',
+            textColor: '#ffffff',
+            notes: 'Payment is due within the specified terms.\nBank: Example Bank\nAccount: 123456789',
+            sender: { name: 'Interiors by Ode', email: 'contact@acme.com', address: '123 Business Rd, Tech City' },
+            recipient: { name: 'Client Name', email: 'client@email.com', address: '456 Client Ave, Remote City' },
+            items: [
+                { id: 1, description: 'Web Development Services', quantity: 1, price: 1500 },
+                { id: 2, description: 'Server Maintenance', quantity: 5, price: 100 }
+            ]
+        };
+
+        // --- Multi-Invoice Management ---
+        let invoices = JSON.parse(localStorage.getItem('docGen_invoices')) || [];
+        let currentId = localStorage.getItem('docGen_currentId');
+
+        // Migration for existing single invoice users or fresh start
+        if (invoices.length === 0) {
+            const oldState = JSON.parse(localStorage.getItem('docGenState'));
+            const initialState = oldState ? { ...defaultState, ...oldState } : JSON.parse(JSON.stringify(defaultState));
+            initialState.id = Date.now();
+            invoices.push(initialState);
+            currentId = initialState.id;
+        }
+
+        // Ensure valid currentId
+        if (!invoices.find(i => i.id == currentId)) {
+            currentId = invoices[0].id;
+        }
+
+        let state = invoices.find(i => i.id == currentId);
+
+        // --- Client Database ---
+        let clients = JSON.parse(localStorage.getItem('docGen_clients')) || [];
+
+        function saveClient() {
+            const client = state.recipient;
+            if (!client.name) {
+                alert('Please enter a client name first.');
+                return;
+            }
+            
+            const existingIndex = clients.findIndex(c => c.name.toLowerCase() === client.name.toLowerCase());
+            if (existingIndex >= 0) {
+                if(confirm('Client already exists. Update details?')) {
+                    clients[existingIndex] = JSON.parse(JSON.stringify(client));
+                } else {
+                    return;
+                }
+            } else {
+                clients.push(JSON.parse(JSON.stringify(client)));
+            }
+            
+            localStorage.setItem('docGen_clients', JSON.stringify(clients));
+            updateClientList();
+            alert('Client saved to database!');
+        }
+
+        function loadClient(index) {
+            if (index === "") return;
+            const client = clients[index];
+            state.recipient = JSON.parse(JSON.stringify(client)); // Deep copy
+            
+            // Update inputs
+            document.getElementById('input-recipient-name').value = client.name;
+            document.getElementById('input-recipient-email').value = client.email;
+            document.getElementById('input-recipient-address').value = client.address;
+            
+            save();
+        }
+
+        function updateClientList() {
+            const selector = document.getElementById('client-selector');
+            if(selector) {
+                selector.innerHTML = '<option value="">Select Saved Client...</option>' + 
+                    clients.map((c, i) => `<option value="${i}">${c.name}</option>`).join('');
+            }
+        }
+
+        // --- Core Functions ---
+        function save() {
+            localStorage.setItem('docGen_invoices', JSON.stringify(invoices));
+            localStorage.setItem('docGen_currentId', currentId);
+            if(document.getElementById('view-history').classList.contains('hidden') === false) renderHistory();
+            renderPreview();
+        }
+
+        function updateField(field, value) {
+            state[field] = value;
+            
+            // Auto-calculate Due Date
+            if (field === 'date' || field === 'paymentTerms') {
+                const date = new Date(state.date);
+                const terms = parseInt(state.paymentTerms || 0);
+                date.setDate(date.getDate() + terms);
+                state.dueDate = date.toISOString().split('T')[0];
+                if(document.getElementById('input-dueDate')) document.getElementById('input-dueDate').value = state.dueDate;
+            }
+            save();
+        }
+
+        function updateNested(parent, field, value) {
+            state[parent][field] = value;
+            save();
+        }
+
+        function updateItem(id, field, value) {
+            const item = state.items.find(i => i.id === id);
+            if (item) {
+                item[field] = field === 'description' ? value : parseFloat(value) || 0;
+                save();
+            }
+        }
+
+        function addItem() {
+            state.items.push({ id: Date.now(), description: '', quantity: 1, price: 0 });
+            save();
+            renderEditorItems(); // Re-render editor list to show new item
+        }
+
+        function removeItem(id) {
+            state.items = state.items.filter(i => i.id !== id);
+            save();
+            renderEditorItems();
+        }
+
+        function resetData() {
+            if(confirm('Are you sure you want to reset this invoice?')) {
+                const newDetails = JSON.parse(JSON.stringify(defaultState));
+                // Preserve ID
+                newDetails.id = state.id;
+                // Update reference in array
+                const index = invoices.findIndex(i => i.id == state.id);
+                invoices[index] = newDetails;
+                state = newDetails;
+                save();
+                initEditor(); // Reset inputs
+                updateInvoiceList();
+            }
+        }
+
+        function createInvoice() {
+            const newInvoice = JSON.parse(JSON.stringify(defaultState));
+            newInvoice.id = Date.now();
+            newInvoice.number = 'INV-' + Math.floor(1000 + Math.random() * 9000); // Random number
+            invoices.push(newInvoice);
+            switchInvoice(newInvoice.id);
+        }
+
+        function deleteInvoice() {
+            if (invoices.length <= 1) {
+                alert("You must have at least one invoice.");
+                return;
+            }
+            if (confirm('Delete this invoice?')) {
+                invoices = invoices.filter(i => i.id != currentId);
+                switchInvoice(invoices[0].id);
+            }
+        }
+
+        function switchInvoice(id) {
+            currentId = id;
+            state = invoices.find(i => i.id == currentId);
+            save(); // Persist current ID
+            initEditor();
+            updateInvoiceList();
+        }
+
+        function updateInvoiceList() {
+            const selector = document.getElementById('invoice-selector');
+            selector.innerHTML = invoices.map(inv => 
+                `<option value="${inv.id}" ${inv.id == currentId ? 'selected' : ''}>${inv.number} - ${inv.recipient.name}</option>`
+            ).join('');
+        }
+
+        function handleLogoUpload(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    state.logo = e.target.result;
+                    save();
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // --- View Management ---
+        function switchView(viewName) {
+            // Hide all views
+            document.getElementById('view-editor').classList.add('hidden');
+            document.getElementById('view-history').classList.add('hidden');
+            document.getElementById('view-analytics').classList.add('hidden');
+            
+            // Reset Nav Styles
+            ['editor', 'history', 'analytics'].forEach(v => {
+                const btn = document.getElementById(`nav-${v}`);
+                btn.classList.remove('bg-gray-600', 'text-white');
+                btn.classList.add('text-gray-400');
+            });
+
+            // Show selected view
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+            
+            // Highlight Nav
+            const activeBtn = document.getElementById(`nav-${viewName}`);
+            activeBtn.classList.remove('text-gray-400');
+            activeBtn.classList.add('bg-gray-600', 'text-white');
+
+            if (viewName === 'history') renderHistory();
+            if (viewName === 'analytics') renderAnalytics();
+        }
+
+        function renderHistory() {
+            const searchTerm = document.getElementById('history-search') ? document.getElementById('history-search').value.toLowerCase() : '';
+            const tbody = document.getElementById('history-table-body');
+            
+            // Sort by date descending (newest first)
+            const sortedInvoices = [...invoices].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            const filtered = sortedInvoices.filter(inv => 
+                (inv.number && inv.number.toLowerCase().includes(searchTerm)) || 
+                (inv.recipient.name && inv.recipient.name.toLowerCase().includes(searchTerm))
+            );
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-500">No invoices found matching "${searchTerm}"</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(inv => {
+                const subtotal = inv.items.reduce((acc, item) => acc + (item.quantity * item.price), 0);
+                const total = subtotal + ((subtotal * inv.taxRate) / 100);
+                
+                return `
+                <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td class="p-4">${inv.date}</td>
+                    <td class="p-4 font-medium">${inv.number}</td>
+                    <td class="p-4">${inv.recipient.name}</td>
+                    <td class="p-4 text-right font-mono">KSH ${total.toFixed(2)}</td>
+                    <td class="p-4 text-center">
+                        <span class="px-2 py-1 rounded-full text-xs font-bold ${inv.isPaid ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">
+                            ${inv.isPaid ? 'PAID' : 'PENDING'}
+                        </span>
+                    </td>
+                    <td class="p-4 text-center">
+                        <button onclick="switchInvoice(${inv.id}); switchView('editor')" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Edit</button>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        function exportData() {
+            if (invoices.length === 0) {
+                alert("There is no data to export.");
+                return;
+            }
+            const dataStr = JSON.stringify(invoices, null, 2); // Pretty print JSON
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            const date = new Date().toISOString().split('T')[0];
+            link.download = `interiors-by-ode-backup-${date}.json`;
+            link.href = url;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function importData(input) {
+            if (!input.files || !input.files[0]) return;
+
+            const file = input.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                try {
+                    const importedInvoices = JSON.parse(e.target.result);
+                    if (!Array.isArray(importedInvoices) || (importedInvoices.length > 0 && !importedInvoices[0].id)) {
+                        throw new Error("Invalid file format.");
+                    }
+
+                    if (confirm(`This will replace all ${invoices.length} current invoices with ${importedInvoices.length} from the backup file. Are you sure? This cannot be undone.`)) {
+                        invoices = importedInvoices;
+                        currentId = invoices.length > 0 ? invoices[0].id : null;
+                        save();
+                        switchInvoice(currentId);
+                        renderHistory();
+                        alert('Data imported successfully!');
+                    }
+                } catch (error) {
+                    alert('Import failed. The file may be corrupted or not a valid backup file.');
+                } finally {
+                    input.value = ''; // Reset file input
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        let chartInstance = null;
+        function renderAnalytics() {
+            try {
+                // Aggregate data by month
+                const monthlyData = {};
+                let totalRevenue = 0;
+
+                // Sort invoices by date
+                const sortedInvoices = [...invoices].sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+
+                sortedInvoices.forEach(inv => {
+                    // Safety checks
+                    const items = Array.isArray(inv.items) ? inv.items : [];
+                    const subtotal = items.reduce((acc, item) => acc + ((parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0)), 0);
+                    const taxRate = parseFloat(inv.taxRate) || 0;
+                    const total = subtotal + ((subtotal * taxRate) / 100);
+                    
+                    if (!isNaN(total)) {
+                        totalRevenue += total;
+                        const dateStr = inv.date || new Date().toISOString().split('T')[0];
+                        const month = dateStr.substring(0, 7); // YYYY-MM
+                        monthlyData[month] = (monthlyData[month] || 0) + total;
+                    }
+                });
+
+                document.getElementById('analytics-total').textContent = `KSH ${totalRevenue.toFixed(2)}`;
+
+                // Ensure chronological order
+                const labels = Object.keys(monthlyData).sort();
+                const data = labels.map(m => monthlyData[m]);
+
+                // Determine Health
+                const healthEl = document.getElementById('analytics-health');
+                if (data.length >= 2) {
+                    const lastMonth = data[data.length - 1];
+                    const prevMonth = data[data.length - 2];
+                    if (lastMonth >= prevMonth) {
+                        healthEl.innerHTML = '<span class="text-green-600 font-bold"><i class="fa-solid fa-arrow-trend-up"></i> SCALING</span> - Revenue is trending up compared to previous period.';
+                    } else {
+                        healthEl.innerHTML = '<span class="text-red-600 font-bold"><i class="fa-solid fa-arrow-trend-down"></i> FAILING</span> - Revenue is down compared to previous period.';
+                    }
+                } else {
+                    healthEl.innerHTML = '<span class="text-gray-500">Not enough data to determine trend.</span>';
+                }
+
+                // Render Chart
+                if (typeof Chart !== 'undefined') {
+                    const ctx = document.getElementById('revenueChart').getContext('2d');
+                    if (chartInstance) chartInstance.destroy();
+                    
+                    chartInstance = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Revenue (KSH)',
+                                data: data,
+                                borderColor: '#2563eb',
+                                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                                tension: 0.3,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error("Error rendering analytics:", e);
+            }
+        }
+
+        // --- Signature Pad ---
+        let sigCanvas, sigCtx, isSigDrawing = false;
+
+        function initSignaturePad() {
+            sigCanvas = document.getElementById('signature-pad');
+            sigCtx = sigCanvas.getContext('2d');
+            sigCtx.lineWidth = 2;
+            sigCtx.lineCap = 'round';
+            sigCtx.strokeStyle = '#000';
+
+            // Events
+            sigCanvas.addEventListener('mousedown', startSig);
+            sigCanvas.addEventListener('mousemove', drawSig);
+            sigCanvas.addEventListener('mouseup', stopSig);
+            sigCanvas.addEventListener('mouseout', stopSig);
+            
+            sigCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); startSig(e); });
+            sigCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); drawSig(e); });
+            sigCanvas.addEventListener('touchend', (e) => { e.preventDefault(); stopSig(e); });
+        }
+
+        function getSigPos(e) {
+            const rect = sigCanvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            // Calculate scale factors
+            const scaleX = sigCanvas.width / rect.width;
+            const scaleY = sigCanvas.height / rect.height;
+
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function startSig(e) {
+            isSigDrawing = true;
+            const pos = getSigPos(e);
+            sigCtx.beginPath();
+            sigCtx.moveTo(pos.x, pos.y);
+        }
+
+        function drawSig(e) {
+            if (!isSigDrawing) return;
+            const pos = getSigPos(e);
+            sigCtx.lineTo(pos.x, pos.y);
+            sigCtx.stroke();
+        }
+
+        function stopSig() {
+            if (isSigDrawing) {
+                isSigDrawing = false;
+                state.signature = sigCanvas.toDataURL();
+                save();
+            }
+        }
+
+        function clearSignature() {
+            sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+            state.signature = '';
+            save();
+        }
+
+        // --- Calculator Functions ---
+        function toggleCalculator() {
+            const el = document.getElementById('calculator-widget');
+            el.classList.toggle('hidden');
+        }
+        
+        let calcExpression = '';
+        function calcInput(val) {
+            if (val === 'C') {
+                calcExpression = '';
+            } else {
+                calcExpression += val;
+            }
+            document.getElementById('calc-display').value = calcExpression || '0';
+        }
+        
+        function calcResult() {
+            try {
+                calcExpression = eval(calcExpression).toString();
+                document.getElementById('calc-display').value = calcExpression;
+            } catch (e) {
+                document.getElementById('calc-display').value = 'Error';
+                calcExpression = '';
+            }
+        }
+
+        // --- Rendering ---
+        function renderPreview() {
+            // Apply Theme Color
+            const color = state.themeColor || '#2563eb';
+            const bgColor = state.backgroundColor || '#ffffff';
+            const textColor = state.textColor || '#1f2937';
+            
+            // Top border for PDF style
+            document.getElementById('preview-container').style.borderTop = `12px solid ${color}`;
+            document.getElementById('preview-container').style.backgroundColor = bgColor;
+            document.getElementById('preview-container').style.color = textColor;
+            
+            document.getElementById('preview-title').style.color = color;
+            document.getElementById('preview-sender-name').style.color = color;
+            document.getElementById('preview-recipient-name').style.color = color;
+            document.getElementById('preview-notes-title').style.color = color;
+            document.getElementById('preview-company-header').style.color = color;
+            
+            // Table styling
+            document.querySelectorAll('#preview-container th').forEach(th => { th.style.backgroundColor = color; th.style.color = 'white'; });
+            document.querySelectorAll('#preview-container thead tr').forEach(tr => tr.style.borderColor = color);
+            
+            // Total line styling
+            const totalLine = document.getElementById('preview-total-line');
+            if(totalLine) {
+                totalLine.style.color = color;
+                totalLine.style.borderColor = color;
+            }
+
+            // Update text colors for specific elements that might have specific classes
+            document.querySelectorAll('#preview-container p, #preview-container td, #preview-container span').forEach(el => {
+                if (!el.closest('th') && !el.closest('#preview-total-line')) el.style.color = textColor;
+            });
+
+            // Paid Stamp
+            const paidStamp = document.getElementById('preview-paid-stamp');
+            if (paidStamp) {
+                paidStamp.style.display = state.isPaid ? 'block' : 'none';
+            }
+
+            // Logo
+            const previewLogo = document.getElementById('preview-logo');
+            const headerLogo = document.getElementById('header-logo');
+            
+            if (state.logo) {
+                previewLogo.src = state.logo;
+                previewLogo.style.display = 'block';
+                headerLogo.src = state.logo;
+            }
+            
+            // Company Header
+            const companyHeader = document.getElementById('preview-company-header');
+            companyHeader.textContent = state.sender.name;
+            companyHeader.style.display = 'block';
+
+            // Signature
+            const sigImg = document.getElementById('preview-signature');
+            if (state.signature) {
+                sigImg.src = state.signature;
+                sigImg.style.display = 'block';
+            } else {
+                sigImg.style.display = 'none';
+            }
+
+            // Text Fields
+            document.getElementById('preview-title').textContent = state.title;
+            document.getElementById('preview-number').textContent = state.number;
+            document.getElementById('preview-date').textContent = state.date;
+            document.getElementById('preview-dueDate').textContent = state.dueDate;
+            document.getElementById('preview-notes').textContent = state.notes;
+            document.getElementById('preview-taxRate').textContent = state.taxRate;
+            
+            document.getElementById('preview-sender-name').textContent = state.sender.name;
+            document.getElementById('preview-sender-email').textContent = state.sender.email;
+            document.getElementById('preview-sender-address').textContent = state.sender.address;
+
+            document.getElementById('preview-recipient-name').textContent = state.recipient.name;
+            document.getElementById('preview-recipient-email').textContent = state.recipient.email;
+            document.getElementById('preview-recipient-address').textContent = state.recipient.address;
+
+            // Items Table
+            const tbody = document.getElementById('preview-items');
+            tbody.innerHTML = state.items.map(item => `
+                <tr class="border-b border-gray-200">
+                    <td class="py-4 text-gray-700">${item.description || 'Item description'}</td>
+                    <td class="py-4 text-center text-gray-700">${item.quantity}</td>
+                    <td class="py-4 text-right text-gray-700">KSH ${item.price.toFixed(2)}</td>
+                    <td class="py-4 text-right font-medium text-slate-800">KSH ${(item.quantity * item.price).toFixed(2)}</td>
+                </tr>
+            `).join('');
+
+            // Calculations
+            const subtotal = state.items.reduce((acc, item) => acc + (item.quantity * item.price), 0);
+            const taxAmount = (subtotal * state.taxRate) / 100;
+            const total = subtotal + taxAmount;
+
+            document.getElementById('preview-subtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('preview-taxAmount').textContent = taxAmount.toFixed(2);
+            document.getElementById('preview-total').textContent = total.toFixed(2);
+        }
+
+        function renderEditorItems() {
+            const container = document.getElementById('items-container');
+            container.innerHTML = state.items.map(item => `
+                <div class="flex gap-2 items-start">
+                    <input value="${item.description}" oninput="updateItem(${item.id}, 'description', this.value)" placeholder="Description" class="flex-grow p-2 border rounded">
+                    <input type="number" value="${item.quantity}" oninput="updateItem(${item.id}, 'quantity', this.value)" placeholder="Qty" class="w-16 p-2 border rounded text-center">
+                    <input type="number" value="${item.price}" oninput="updateItem(${item.id}, 'price', this.value)" placeholder="Price" class="w-24 p-2 border rounded text-right">
+                    <button onclick="removeItem(${item.id})" class="p-2 text-red-400 hover:text-red-600">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function initEditor() {
+            // Set initial values for inputs
+            document.getElementById('input-title').value = state.title;
+            document.getElementById('input-number').value = state.number;
+            document.getElementById('input-date').value = state.date;
+            document.getElementById('input-taxRate').value = state.taxRate;
+            document.getElementById('input-paymentTerms').value = state.paymentTerms || '0';
+            document.getElementById('input-dueDate').value = state.dueDate;
+            document.getElementById('input-isPaid').checked = state.isPaid || false;
+            document.getElementById('input-notes').value = state.notes;
+            document.getElementById('input-themeColor').value = state.themeColor || '#2563eb';
+            document.getElementById('input-backgroundColor').value = state.backgroundColor || '#ffffff';
+            document.getElementById('input-textColor').value = state.textColor || '#1f2937';
+            
+            document.getElementById('input-sender-name').value = state.sender.name;
+            document.getElementById('input-sender-email').value = state.sender.email;
+            document.getElementById('input-sender-address').value = state.sender.address;
+
+            document.getElementById('input-recipient-name').value = state.recipient.name;
+            document.getElementById('input-recipient-email').value = state.recipient.email;
+            document.getElementById('input-recipient-address').value = state.recipient.address;
+
+            // Load Signature
+            if (sigCtx) {
+                sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+                if (state.signature) {
+                    const img = new Image();
+                    img.onload = () => {
+                        sigCtx.drawImage(img, 0, 0, sigCanvas.width, sigCanvas.height);
+                    };
+                    img.src = state.signature;
+                }
+            }
+
+            renderEditorItems();
+            renderPreview();
+            updateInvoiceList();
+            updateClientList();
+        }
+
+        // --- Live Data Sync (Cross-Tab) ---
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'docGen_invoices') {
+                invoices = JSON.parse(e.newValue) || [];
+                
+                // Re-link state to the new array object
+                const updatedState = invoices.find(i => i.id == currentId);
+                if (updatedState) {
+                    state = updatedState;
+                    if (!document.getElementById('view-editor').classList.contains('hidden')) {
+                        initEditor();
+                    }
+                } else if (invoices.length > 0) {
+                    // Current invoice was deleted elsewhere
+                    switchInvoice(invoices[0].id);
+                }
+                
+                // Refresh views
+                if (!document.getElementById('view-history').classList.contains('hidden')) renderHistory();
+                if (!document.getElementById('view-analytics').classList.contains('hidden')) renderAnalytics();
+                updateInvoiceList();
+            }
+        });
+
+        // Start
+        initSignaturePad();
+        initEditor();
+
+    </script>
+</body>
+</html>
