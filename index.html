@@ -37,6 +37,9 @@
             /* Avoid page breaks in table */
             table { page-break-inside: avoid; }
 
+            /* Ensure first page contains up to 8 items; break after 8th row when printing */
+            #preview-items tr:nth-child(8) { page-break-after: always; }
+
             /* Remove domain/brand elements */
             #preview-logo { display: none !important; }
             #preview-company-header { display: none !important; }
