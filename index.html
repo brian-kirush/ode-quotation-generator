@@ -468,7 +468,6 @@
             themeColor: '#ffffff',
             backgroundColor: '#738a73',
             textColor: '#ffffff',
-            tableFontColor: '#1f2937',
             notes: 'Payment is due within the specified terms.\nBank: Example Bank\nAccount: 123456789',
             sender: { name: 'Interiors by Ode', email: 'contact@acme.com', address: '123 Business Rd, Tech City' },
             recipient: { name: 'Client Name', email: 'client@email.com', address: '456 Client Ave, Remote City' },
@@ -1009,10 +1008,9 @@
                 if (!el.closest('th') && !el.closest('#preview-total-line')) el.style.color = textColor;
             });
 
-            // Apply table font theme color (cells only)
-            const tableColor = state.tableFontColor || textColor;
+            // Table cells use the main text color
             document.querySelectorAll('#preview-container td').forEach(td => {
-                if (!td.closest('#preview-total-line')) td.style.color = tableColor;
+                if (!td.closest('#preview-total-line')) td.style.color = textColor;
             });
 
             // Paid Stamp
@@ -1105,10 +1103,7 @@
                         <div class="md:col-span-3">
                             <label class="block text-[10px] uppercase text-gray-400">Qty</label>
                             <input type="text" value="${item.quantity}" oninput="updateItem(${item.id}, 'quantity', this.value)" placeholder="10 pcs" class="w-full p-1 border rounded text-sm text-center">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Table Font Color</label>
-                            <input type="color" id="input-tableFontColor" oninput="updateField('tableFontColor', this.value)" class="w-full h-10 p-1 border rounded cursor-pointer">
-                        </div>
+                    
                         </div>
                         <div class="md:col-span-3">
                             <label class="block text-[10px] uppercase text-gray-400">Unit Price</label>
@@ -1134,7 +1129,6 @@
             document.getElementById('input-themeColor').value = state.themeColor || '#2563eb';
             document.getElementById('input-backgroundColor').value = state.backgroundColor || '#ffffff';
             document.getElementById('input-textColor').value = state.textColor || '#1f2937';
-            document.getElementById('input-tableFontColor').value = state.tableFontColor || '#1f2937';
             
             document.getElementById('input-sender-name').value = state.sender.name;
             document.getElementById('input-sender-email').value = state.sender.email;
