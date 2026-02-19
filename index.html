@@ -61,7 +61,7 @@
                 <nav class="flex bg-gray-800 rounded-lg p-1">
                     <button onclick="switchView('editor')" id="nav-editor" class="px-3 py-1 rounded text-sm font-medium bg-gray-600 text-white transition-colors">Editor</button>
                     <button onclick="switchView('history')" id="nav-history" class="px-3 py-1 rounded text-sm font-medium text-gray-400 hover:text-white transition-colors">History</button>
-                    <button onclick="switchView('analytics')" id="nav-analytics" class="px-3 py-1 rounded text-sm font-medium text-gray-400 hover:text-white transition-colors">Analytics</button>
+                    <!-- Analytics tab removed -->
                 </nav>
                 <div class="flex gap-2 flex-wrap justify-center">
                     <button onclick="toggleCalculator()" class="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-colors font-medium text-sm">
@@ -391,33 +391,7 @@
             </div>
         </div>
 
-        <!-- VIEW: ANALYTICS -->
-        <div id="view-analytics" class="hidden space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                    <h3 class="text-gray-500 text-xs uppercase font-bold">Total Revenue</h3>
-                    <p class="text-3xl font-bold text-gray-800 mt-2" id="analytics-total">KSH 0.00</p>
-                    <p class="text-xs text-gray-400 mt-1"><span id="analytics-count">0</span> Quotations</p>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                    <h3 class="text-gray-500 text-xs uppercase font-bold">Materials vs Labour</h3>
-                    <div class="mt-2 space-y-1">
-                        <div class="flex justify-between text-sm"><span>Materials:</span> <span class="font-bold" id="analytics-materials">0.00</span></div>
-                        <div class="flex justify-between text-sm"><span>Labour:</span> <span class="font-bold" id="analytics-labour">0.00</span></div>
-                    </div>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                    <h3 class="text-gray-500 text-sm uppercase font-bold mb-4">Business Health</h3>
-                    <p id="analytics-health" class="text-lg font-medium"></p>
-                </div>
-            </div>
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                <h3 class="text-lg font-bold mb-4">Revenue Trend</h3>
-                <div class="h-80 w-full">
-                    <canvas id="revenueChart"></canvas>
-                </div>
-            </div>
-        </div>
+        <!-- Analytics view removed -->
     </main>
 
     <!-- Calculator Widget -->
@@ -675,7 +649,8 @@
             // Hide all views
             document.getElementById('view-editor').classList.add('hidden');
             document.getElementById('view-history').classList.add('hidden');
-            document.getElementById('view-analytics').classList.add('hidden');
+                // analytics view removed
+                // document.getElementById('view-analytics').classList.add('hidden');
             
             // Reset Nav Styles
             ['editor', 'history', 'analytics'].forEach(v => {
@@ -693,10 +668,7 @@
             activeBtn.classList.add('bg-gray-600', 'text-white');
 
             if (viewName === 'history') renderHistory();
-            if (viewName === 'analytics') {
-                // Delay rendering so Chart can measure visible container
-                setTimeout(renderAnalytics, 50);
-            }
+                // Removed analytics rendering
         }
 
         // Helper to parse "10 pcs" -> 10
@@ -798,88 +770,7 @@
             reader.readAsText(file);
         }
 
-        let chartInstance = null;
-        function renderAnalytics() {
-            try {
-                // Aggregate data by month
-                const monthlyData = {};
-                let totalRevenue = 0;
-                let totalMaterials = 0;
-                let totalLabour = 0;
-
-                // Sort invoices by date
-                const sortedInvoices = [...invoices].sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
-
-                sortedInvoices.forEach(inv => {
-                    // Safety checks
-                    const items = Array.isArray(inv.items) ? inv.items : [];
-                    const matTotal = items.reduce((acc, item) => acc + (parseQuantity(item.quantity) * (parseFloat(item.price) || 0)), 0);
-                    const labour = (matTotal * (inv.labourRate || 0)) / 100;
-                    const taxRate = parseFloat(inv.taxRate) || 0;
-                    const subtotal = matTotal + labour;
-                    const total = subtotal + ((subtotal * taxRate) / 100);
-                    
-                    if (!isNaN(total)) {
-                        totalRevenue += total;
-                        const dateStr = inv.date || new Date().toISOString().split('T')[0];
-                        const month = dateStr.substring(0, 7); // YYYY-MM
-                        monthlyData[month] = (monthlyData[month] || 0) + total;
-                        totalMaterials += matTotal;
-                        totalLabour += labour;
-                    }
-                });
-
-                document.getElementById('analytics-total').textContent = `KSH ${totalRevenue.toFixed(2)}`;
-                document.getElementById('analytics-count').textContent = invoices.length;
-                document.getElementById('analytics-materials').textContent = `KSH ${totalMaterials.toFixed(2)}`;
-                document.getElementById('analytics-labour').textContent = `KSH ${totalLabour.toFixed(2)}`;
-
-                // Ensure chronological order
-                const labels = Object.keys(monthlyData).sort();
-                const data = labels.map(m => monthlyData[m]);
-
-                // Determine Health
-                const healthEl = document.getElementById('analytics-health');
-                if (data.length >= 2) {
-                    const lastMonth = data[data.length - 1];
-                    const prevMonth = data[data.length - 2];
-                    if (lastMonth >= prevMonth) {
-                        healthEl.innerHTML = '<span class="text-green-600 font-bold"><i class="fa-solid fa-arrow-trend-up"></i> SCALING</span> - Revenue is trending up compared to previous period.';
-                    } else {
-                        healthEl.innerHTML = '<span class="text-red-600 font-bold"><i class="fa-solid fa-arrow-trend-down"></i> FAILING</span> - Revenue is down compared to previous period.';
-                    }
-                } else {
-                    healthEl.innerHTML = '<span class="text-gray-500">Not enough data to determine trend.</span>';
-                }
-
-                // Render Chart
-                if (typeof Chart !== 'undefined') {
-                    const ctx = document.getElementById('revenueChart').getContext('2d');
-                    if (chartInstance) chartInstance.destroy();
-                    
-                    chartInstance = new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                label: 'Revenue (KSH)',
-                                data: data,
-                                borderColor: '#2563eb',
-                                backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                                tension: 0.3,
-                                fill: true
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false
-                        }
-                    });
-                }
-            } catch (e) {
-                console.error("Error rendering analytics:", e);
-            }
-        }
+        // Analytics removed
 
         // --- Signature Pad ---
         let sigCanvas, sigCtx, isSigDrawing = false;
