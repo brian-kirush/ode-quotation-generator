@@ -686,8 +686,10 @@
             
             // Highlight Nav
             const activeBtn = document.getElementById(`nav-${viewName}`);
-            activeBtn.classList.remove('text-gray-400');
-            activeBtn.classList.add('bg-gray-600', 'text-white');
+            if (activeBtn) {
+                activeBtn.classList.remove('text-gray-400');
+                activeBtn.classList.add('bg-gray-600', 'text-white');
+            }
 
             if (viewName === 'history') renderHistory();
                 // Removed analytics rendering
