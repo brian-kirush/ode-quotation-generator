@@ -12,7 +12,7 @@
             @page { margin: 0; size: auto; }
             .no-print { display: none !important; }
             .print-only { display: block !important; }
-            body { background: white; margin: 0; padding: 0; }
+            body { background: white; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             
             /* Reset layout for print to prevent cutoff */
             main { display: block !important; width: 100% !important; margin: 0 !important; padding: 0 !important; max-width: none !important; }
@@ -20,7 +20,7 @@
             
             #preview-container {
                 width: 100% !important;
-                max-width: 210mm !important;
+                max-width: none !important;
                 margin: 0 auto !important;
                 box-shadow: none !important;
                 border: none !important;
@@ -29,6 +29,17 @@
             }
             /* Hide scrollbars in print */
             ::-webkit-scrollbar { display: none; }
+            
+            /* Compact spacing for print */
+            #preview-items td { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; }
+            .print-compact { margin-bottom: 1rem !important; }
+
+            /* Avoid page breaks in table */
+            table { page-break-inside: avoid; }
+
+            /* Remove domain/brand elements */
+            #preview-logo { display: none !important; }
+            #preview-company-header { display: none !important; }
         }
     </style>
 </head>
@@ -93,6 +104,10 @@
                         <input type="text" id="input-title" oninput="updateField('title', this.value)" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
                     <div>
+                        <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Job Description</label>
+                        <input type="text" id="input-jobDescription" oninput="updateField('jobDescription', this.value)" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Kitchen Renovation">
+                    </div>
+                    <div>
                         <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Number</label>
                         <input type="text" id="input-number" oninput="updateField('number', this.value)" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
@@ -100,9 +115,15 @@
                         <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Date</label>
                         <input type="date" id="input-date" oninput="updateField('date', this.value)" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Tax Rate (%)</label>
-                        <input type="number" id="input-taxRate" oninput="updateField('taxRate', this.value)" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                    <div class="col-span-2 grid grid-cols-2 gap-4 bg-gray-50 p-2 rounded border border-gray-200">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Labour Rate (%)</label>
+                            <input type="number" id="input-labourRate" oninput="updateLabour('rate', this.value)" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">VAT / Tax (%)</label>
+                            <input type="number" id="input-taxRate" oninput="updateField('taxRate', this.value)" class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                        </div>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-500 uppercase mb-1">Payment Terms</label>
@@ -238,7 +259,7 @@
                     </div>
 
                     <!-- Bill To -->
-                    <div class="flex justify-between mb-12">
+                    <div class="flex justify-between mb-8">
                         <div>
                             <p class="text-xs font-bold text-gray-400 uppercase mb-1">Bill To</p>
                             <h3 id="preview-recipient-name" class="font-bold text-slate-800"></h3>
@@ -255,6 +276,12 @@
                                 <p id="preview-dueDate" class="font-medium"></p>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Job Description -->
+                    <div class="mb-8 border-l-4 border-gray-300 pl-4 py-1" id="preview-job-container">
+                        <p class="text-xs font-bold text-gray-400 uppercase mb-1">Job Description</p>
+                        <h3 id="preview-jobDescription" class="font-bold text-lg text-slate-800"></h3>
                     </div>
 
                     <!-- Table -->
@@ -274,10 +301,18 @@
 
                     <!-- Totals -->
                     <div class="flex justify-end">
-                        <div class="w-1/2 space-y-3">
+                        <div class="w-2/3 md:w-1/2 space-y-2">
                             <div class="flex justify-between text-gray-600">
-                                <span>Subtotal</span>
-                                <span>KSH <span id="preview-subtotal">0.00</span></span>
+                                <span>Materials Subtotal</span>
+                                <span>KSH <span id="preview-materialSubtotal">0.00</span></span>
+                            </div>
+                            <div class="flex justify-between text-gray-600 items-center">
+                                <span>Labour (<span id="preview-labourRate">30</span>%)</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs text-gray-400 no-print">(Edit Amt)</span>
+                                    <input type="number" id="preview-labour-input" onchange="updateLabour('amount', this.value)" class="text-right w-24 border-b border-gray-300 focus:border-blue-500 outline-none bg-transparent no-print" step="0.01">
+                                    <span class="print-only">KSH <span id="preview-labourCost">0.00</span></span>
+                                </div>
                             </div>
                             <div class="flex justify-between text-gray-600">
                                 <span>Tax (<span id="preview-taxRate"></span>%)</span>
@@ -356,10 +391,18 @@
         <div id="view-analytics" class="hidden space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                    <h3 class="text-gray-500 text-sm uppercase font-bold">Total Revenue</h3>
+                    <h3 class="text-gray-500 text-xs uppercase font-bold">Total Revenue</h3>
                     <p class="text-3xl font-bold text-gray-800 mt-2" id="analytics-total">KSH 0.00</p>
+                    <p class="text-xs text-gray-400 mt-1"><span id="analytics-count">0</span> Quotations</p>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 col-span-2">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                    <h3 class="text-gray-500 text-xs uppercase font-bold">Materials vs Labour</h3>
+                    <div class="mt-2 space-y-1">
+                        <div class="flex justify-between text-sm"><span>Materials:</span> <span class="font-bold" id="analytics-materials">0.00</span></div>
+                        <div class="flex justify-between text-sm"><span>Labour:</span> <span class="font-bold" id="analytics-labour">0.00</span></div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                     <h3 class="text-gray-500 text-sm uppercase font-bold mb-4">Business Health</h3>
                     <p id="analytics-health" class="text-lg font-medium"></p>
                 </div>
@@ -410,6 +453,7 @@
         const defaultState = {
             title: 'INVOICE',
             number: 'INV-001',
+            jobDescription: '',
             date: new Date().toISOString().split('T')[0],
             paymentTerms: '0',
             isPaid: false,
@@ -417,6 +461,7 @@
             logo: 'images/logo.png',
             signature: '',
             taxRate: 10,
+            labourRate: 30,
             themeColor: '#ffffff',
             backgroundColor: '#738a73',
             textColor: '#ffffff',
@@ -424,8 +469,8 @@
             sender: { name: 'Interiors by Ode', email: 'contact@acme.com', address: '123 Business Rd, Tech City' },
             recipient: { name: 'Client Name', email: 'client@email.com', address: '456 Client Ave, Remote City' },
             items: [
-                { id: 1, description: 'Web Development Services', quantity: 1, price: 1500 },
-                { id: 2, description: 'Server Maintenance', quantity: 5, price: 100 }
+                { id: 1, description: 'MDF Board', details: 'High-density moisture-resistant board', quantity: '10 pcs', price: 1500 },
+                { id: 2, description: 'Installation', details: 'Site preparation and fixing', quantity: '1 lot', price: 5000 }
             ]
         };
 
@@ -518,6 +563,24 @@
             save();
         }
 
+        function updateLabour(type, value) {
+            const val = parseFloat(value) || 0;
+            
+            if (type === 'rate') {
+                state.labourRate = val;
+            } else if (type === 'amount') {
+                // Reverse calculate rate based on material total
+                const matTotal = getMaterialTotal();
+                if (matTotal === 0 && val > 0) {
+                    alert("Please add line items first. Labour is calculated as a percentage of materials.");
+                    renderPreview();
+                    return;
+                }
+                state.labourRate = matTotal > 0 ? (val / matTotal) * 100 : 0;
+            }
+            save();
+        }
+
         function updateNested(parent, field, value) {
             state[parent][field] = value;
             save();
@@ -526,13 +589,13 @@
         function updateItem(id, field, value) {
             const item = state.items.find(i => i.id === id);
             if (item) {
-                item[field] = field === 'description' ? value : parseFloat(value) || 0;
+                item[field] = (field === 'price') ? (parseFloat(value) || 0) : value;
                 save();
             }
         }
 
         function addItem() {
-            state.items.push({ id: Date.now(), description: '', quantity: 1, price: 0 });
+            state.items.push({ id: Date.now(), description: '', details: '', quantity: '1', price: 0 });
             save();
             renderEditorItems(); // Re-render editor list to show new item
         }
@@ -629,6 +692,13 @@
             if (viewName === 'analytics') renderAnalytics();
         }
 
+        // Helper to parse "10 pcs" -> 10
+        function parseQuantity(str) {
+            if (typeof str === 'number') return str;
+            const match = (str || '').toString().match(/(\d+(\.\d+)?)/);
+            return match ? parseFloat(match[0]) : 0;
+        }
+
         function renderHistory() {
             const searchTerm = document.getElementById('history-search') ? document.getElementById('history-search').value.toLowerCase() : '';
             const tbody = document.getElementById('history-table-body');
@@ -647,14 +717,18 @@
             }
 
             tbody.innerHTML = filtered.map(inv => {
-                const subtotal = inv.items.reduce((acc, item) => acc + (item.quantity * item.price), 0);
-                const total = subtotal + ((subtotal * inv.taxRate) / 100);
+                const items = Array.isArray(inv.items) ? inv.items : [];
+                const matTotal = items.reduce((acc, item) => acc + (parseQuantity(item.quantity) * (parseFloat(item.price) || 0)), 0);
+                const labour = (matTotal * (inv.labourRate || 0)) / 100;
+                const taxable = matTotal + labour;
+                const taxRate = parseFloat(inv.taxRate) || 0;
+                const total = taxable + ((taxable * taxRate) / 100);
                 
                 return `
                 <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td class="p-4">${inv.date}</td>
+                    <td class="p-4">${inv.date || '-'}</td>
                     <td class="p-4 font-medium">${inv.number}</td>
-                    <td class="p-4">${inv.recipient.name}</td>
+                    <td class="p-4">${inv.recipient ? inv.recipient.name : 'Unknown Client'}</td>
                     <td class="p-4 text-right font-mono">KSH ${total.toFixed(2)}</td>
                     <td class="p-4 text-center">
                         <span class="px-2 py-1 rounded-full text-xs font-bold ${inv.isPaid ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">
@@ -723,6 +797,8 @@
                 // Aggregate data by month
                 const monthlyData = {};
                 let totalRevenue = 0;
+                let totalMaterials = 0;
+                let totalLabour = 0;
 
                 // Sort invoices by date
                 const sortedInvoices = [...invoices].sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
@@ -730,8 +806,10 @@
                 sortedInvoices.forEach(inv => {
                     // Safety checks
                     const items = Array.isArray(inv.items) ? inv.items : [];
-                    const subtotal = items.reduce((acc, item) => acc + ((parseFloat(item.quantity) || 0) * (parseFloat(item.price) || 0)), 0);
+                    const matTotal = items.reduce((acc, item) => acc + (parseQuantity(item.quantity) * (parseFloat(item.price) || 0)), 0);
+                    const labour = (matTotal * (inv.labourRate || 0)) / 100;
                     const taxRate = parseFloat(inv.taxRate) || 0;
+                    const subtotal = matTotal + labour;
                     const total = subtotal + ((subtotal * taxRate) / 100);
                     
                     if (!isNaN(total)) {
@@ -739,10 +817,15 @@
                         const dateStr = inv.date || new Date().toISOString().split('T')[0];
                         const month = dateStr.substring(0, 7); // YYYY-MM
                         monthlyData[month] = (monthlyData[month] || 0) + total;
+                        totalMaterials += matTotal;
+                        totalLabour += labour;
                     }
                 });
 
                 document.getElementById('analytics-total').textContent = `KSH ${totalRevenue.toFixed(2)}`;
+                document.getElementById('analytics-count').textContent = invoices.length;
+                document.getElementById('analytics-materials').textContent = `KSH ${totalMaterials.toFixed(2)}`;
+                document.getElementById('analytics-labour').textContent = `KSH ${totalLabour.toFixed(2)}`;
 
                 // Ensure chronological order
                 const labels = Object.keys(monthlyData).sort();
@@ -873,12 +956,16 @@
         
         function calcResult() {
             try {
-                calcExpression = eval(calcExpression).toString();
+                calcExpression = new Function('return ' + calcExpression)().toString();
                 document.getElementById('calc-display').value = calcExpression;
             } catch (e) {
                 document.getElementById('calc-display').value = 'Error';
                 calcExpression = '';
             }
+        }
+
+        function getMaterialTotal() {
+            return state.items.reduce((acc, item) => acc + (parseQuantity(item.quantity) * item.price), 0);
         }
 
         // --- Rendering ---
@@ -948,6 +1035,7 @@
             // Text Fields
             document.getElementById('preview-title').textContent = state.title;
             document.getElementById('preview-number').textContent = state.number;
+            document.getElementById('preview-jobDescription').textContent = state.jobDescription;
             document.getElementById('preview-date').textContent = state.date;
             document.getElementById('preview-dueDate').textContent = state.dueDate;
             document.getElementById('preview-notes').textContent = state.notes;
@@ -965,19 +1053,28 @@
             const tbody = document.getElementById('preview-items');
             tbody.innerHTML = state.items.map(item => `
                 <tr class="border-b border-gray-200">
-                    <td class="py-4 text-gray-700">${item.description || 'Item description'}</td>
-                    <td class="py-4 text-center text-gray-700">${item.quantity}</td>
+                    <td class="py-4 text-gray-700">
+                        <div class="font-bold text-slate-800">${item.description || ''}</div>
+                        <div class="text-xs text-gray-500">${item.details || ''}</div>
+                    </td>
+                    <td class="py-4 text-center text-gray-700 font-medium">${item.quantity}</td>
                     <td class="py-4 text-right text-gray-700">KSH ${item.price.toFixed(2)}</td>
-                    <td class="py-4 text-right font-medium text-slate-800">KSH ${(item.quantity * item.price).toFixed(2)}</td>
+                    <td class="py-4 text-right font-medium text-slate-800">KSH ${(parseQuantity(item.quantity) * item.price).toFixed(2)}</td>
                 </tr>
             `).join('');
 
             // Calculations
-            const subtotal = state.items.reduce((acc, item) => acc + (item.quantity * item.price), 0);
-            const taxAmount = (subtotal * state.taxRate) / 100;
-            const total = subtotal + taxAmount;
+            const matSubtotal = getMaterialTotal();
+            const labourCost = (matSubtotal * (state.labourRate || 0)) / 100;
+            const taxableAmount = matSubtotal + labourCost;
+            const taxAmount = (taxableAmount * state.taxRate) / 100;
+            const total = taxableAmount + taxAmount;
 
-            document.getElementById('preview-subtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('preview-materialSubtotal').textContent = matSubtotal.toFixed(2);
+            document.getElementById('preview-labourRate').textContent = parseFloat(state.labourRate || 0).toFixed(1);
+            document.getElementById('preview-labourCost').textContent = labourCost.toFixed(2);
+            document.getElementById('preview-labour-input').value = labourCost.toFixed(2); // Update input value
+            
             document.getElementById('preview-taxAmount').textContent = taxAmount.toFixed(2);
             document.getElementById('preview-total').textContent = total.toFixed(2);
         }
@@ -985,13 +1082,22 @@
         function renderEditorItems() {
             const container = document.getElementById('items-container');
             container.innerHTML = state.items.map(item => `
-                <div class="flex gap-2 items-start">
-                    <input value="${item.description}" oninput="updateItem(${item.id}, 'description', this.value)" placeholder="Description" class="flex-grow p-2 border rounded">
-                    <input type="number" value="${item.quantity}" oninput="updateItem(${item.id}, 'quantity', this.value)" placeholder="Qty" class="w-16 p-2 border rounded text-center">
-                    <input type="number" value="${item.price}" oninput="updateItem(${item.id}, 'price', this.value)" placeholder="Price" class="w-24 p-2 border rounded text-right">
-                    <button onclick="removeItem(${item.id})" class="p-2 text-red-400 hover:text-red-600">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
+                <div class="bg-gray-50 p-3 rounded border border-gray-200 relative group">
+                    <button onclick="removeItem(${item.id})" class="absolute top-2 right-2 text-red-300 hover:text-red-600 transition-colors"><i class="fa-solid fa-times"></i></button>
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-2">
+                        <div class="md:col-span-6 space-y-1">
+                            <input value="${item.description}" oninput="updateItem(${item.id}, 'description', this.value)" placeholder="Item Name (e.g. MDF Board)" class="w-full p-1 border rounded text-sm font-bold">
+                            <input value="${item.details || ''}" oninput="updateItem(${item.id}, 'details', this.value)" placeholder="Details (e.g. 18mm thickness)" class="w-full p-1 border rounded text-xs text-gray-600">
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-[10px] uppercase text-gray-400">Qty</label>
+                            <input type="text" value="${item.quantity}" oninput="updateItem(${item.id}, 'quantity', this.value)" placeholder="10 pcs" class="w-full p-1 border rounded text-sm text-center">
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-[10px] uppercase text-gray-400">Unit Price</label>
+                            <input type="number" value="${item.price}" oninput="updateItem(${item.id}, 'price', this.value)" placeholder="0.00" class="w-full p-1 border rounded text-sm text-right">
+                        </div>
+                    </div>
                 </div>
             `).join('');
         }
@@ -1000,8 +1106,10 @@
             // Set initial values for inputs
             document.getElementById('input-title').value = state.title;
             document.getElementById('input-number').value = state.number;
+            document.getElementById('input-jobDescription').value = state.jobDescription || '';
             document.getElementById('input-date').value = state.date;
             document.getElementById('input-taxRate').value = state.taxRate;
+            document.getElementById('input-labourRate').value = state.labourRate || 0;
             document.getElementById('input-paymentTerms').value = state.paymentTerms || '0';
             document.getElementById('input-dueDate').value = state.dueDate;
             document.getElementById('input-isPaid').checked = state.isPaid || false;
