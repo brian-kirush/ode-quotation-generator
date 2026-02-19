@@ -34,11 +34,14 @@
             #preview-items td { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; }
             .print-compact { margin-bottom: 1rem !important; }
 
-            /* Avoid page breaks in table */
-            table { page-break-inside: avoid; }
+            /* Allow table to break across pages when necessary */
+            table { page-break-inside: auto; -webkit-column-break-inside: auto; }
 
-            /* Ensure first page contains up to 8 items; break after 8th row when printing */
-            #preview-items tr:nth-child(8) { page-break-after: always; }
+            /* Ensure first page contains up to 8 items; force a page break after the 8th row when printing */
+            #preview-items tr:nth-child(8) {
+                page-break-after: always; /* legacy */
+                break-after: page; /* modern */
+            }
 
             /* Remove domain/brand elements */
             #preview-logo { display: none !important; }
