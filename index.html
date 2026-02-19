@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interiors by Ode</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @media print {
@@ -244,7 +244,7 @@
 
                     <!-- Logo -->
                     <div class="mb-6 flex items-center gap-4">
-                        <img id="preview-logo" src="images/logo.png" class="h-24 w-auto object-contain" onerror="this.style.display='none'">
+                        <img id="preview-logo" class="h-24 w-auto object-contain" onerror="this.style.display='none'">
                         <h1 id="preview-company-header" class="text-3xl font-bold uppercase tracking-wide hidden"></h1>
                     </div>
 
@@ -692,7 +692,10 @@
             activeBtn.classList.add('bg-gray-600', 'text-white');
 
             if (viewName === 'history') renderHistory();
-            if (viewName === 'analytics') renderAnalytics();
+            if (viewName === 'analytics') {
+                // Delay rendering so Chart can measure visible container
+                setTimeout(renderAnalytics, 50);
+            }
         }
 
         // Helper to parse "10 pcs" -> 10
