@@ -673,10 +673,12 @@
                 // document.getElementById('view-analytics').classList.add('hidden');
             
             // Reset Nav Styles
-            ['editor', 'history', 'analytics'].forEach(v => {
+            ['editor', 'history'].forEach(v => {
                 const btn = document.getElementById(`nav-${v}`);
-                btn.classList.remove('bg-gray-600', 'text-white');
-                btn.classList.add('text-gray-400');
+                if (btn) {
+                    btn.classList.remove('bg-gray-600', 'text-white');
+                    btn.classList.add('text-gray-400');
+                }
             });
 
             // Show selected view
