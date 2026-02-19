@@ -43,6 +43,10 @@
                 break-after: page; /* modern */
             }
 
+            /* Repeat table headers on each printed page */
+            thead { display: table-header-group; }
+            tfoot { display: table-footer-group; }
+
             /* Remove domain/brand elements */
             #preview-logo { display: none !important; }
             #preview-company-header { display: none !important; }
@@ -299,9 +303,9 @@
                     <table class="w-full mb-8">
                         <thead>
                             <tr class="border-b-2 border-slate-800">
-                                <th class="text-left py-3 font-bold text-slate-800 uppercase text-sm">Description</th>
-                                <th class="text-center py-3 font-bold text-slate-800 uppercase text-sm">Qty</th>
-                                <th class="text-right py-3 font-bold text-slate-800 uppercase text-sm">Price</th>
+                                <th class="text-left py-3 font-bold text-slate-800 uppercase text-sm">ITEM</th>
+                                <th class="text-center py-3 font-bold text-slate-800 uppercase text-sm">QTY</th>
+                                <th class="text-right py-3 font-bold text-slate-800 uppercase text-sm">PRICE</th>
                                 <th class="text-right py-3 font-bold text-slate-800 uppercase text-sm">Total</th>
                             </tr>
                         </thead>
